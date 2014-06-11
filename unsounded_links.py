@@ -28,19 +28,29 @@ def main():
         data = comic[chapter]
         pages = data.keys()
         pages.sort()
+        if len(pages) != max(pages):
+            print 'Missing pages from chapter %d' % chapter
         for page in pages:
-            page_data = data[page]
-            soup=bs(page_data)
-            this_page = 'ch%s_%s.html' % (
-                    str(chapter).zfill(2), str(page).zfill(2))
-            next_link = soup.findAll("a", { "class" : "forward" })[0]['href']
-            comic_element = soup.find("div", {"id": "comic"}).find('img')
-            link_soup = bs('<a href="%s">' % next_link)
-            link_soup.find('a').insert(0, comic_element.extract())
-            soup.find("div", {"id": "comic"}).insert(0, link_soup)
-            prettyHTML=soup.prettify()
-            with open(this_page, 'w') as f:
-                print >> f, prettyHTML
+            try:
+                page_data = data[page]
+                soup=bs(page_data)
+                this_page = 'ch%s_%s.html' % (
+                        str(chapter).zfill(2), str(page).zfill(2))
+                try:
+                    next_link = soup.findAll("a", { "class" : "forward" })[0]['href']
+                except:
+                    # At the end of chapters there is no link.
+                    next_link = 'ch%s_%s.html' % (
+                        str(chapter+1).zfill(2), str(1).zfill(2))
+                comic_element = soup.find("div", {"id": "comic"}).find('img')
+                link_soup = bs('<a href="%s">' % next_link)
+                link_soup.find('a').insert(0, comic_element.extract())
+                soup.find("div", {"id": "comic"}).insert(0, link_soup)
+                prettyHTML=soup.prettify()
+                with open(this_page, 'w') as f:
+                    print >> f, prettyHTML
+            except Exception as exc:
+                print 'Bad chapter %d page %d %s' %(chapter, page, repr(exc))
 
 if __name__ == '__main__':
     main()
